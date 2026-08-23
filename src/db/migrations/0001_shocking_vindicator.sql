@@ -1,0 +1,1 @@
+ALTER TABLE "participants" DROP CONSTRAINT "participants_whatsapp_unique";

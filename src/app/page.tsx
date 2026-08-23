@@ -5,13 +5,21 @@ import { SectionHeader } from "@/components/layout/section-header";
 import { Button } from "@/components/ui/button";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/fade-in";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { db } from "@/db";
+import { eventSettings, news, sharingSessions } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 
-export default function Home() {
+export default async function Home() {
+  const [settings] = await db.select().from(eventSettings).limit(1);
+  const [session] = await db.select().from(sharingSessions).where(eq(sharingSessions.isActive, true)).limit(1);
+  const newsItems = await db.select().from(news).where(eq(news.status, 'PUBLISHED')).orderBy(desc(news.publishedAt)).limit(3);
+
+  const isRegistrationOpen = settings?.registrationEnabled ?? false;
+
   return (
     <div className="flex flex-col w-full">
       {/* 1. HERO */}
       <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden border-b border-border bg-background">
-        {/* Abstract geometric background representation */}
         <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, black 1px, transparent 0)', backgroundSize: '40px 40px' }} />
         <Container className="relative z-10 pt-20">
           <FadeIn>
@@ -27,13 +35,15 @@ export default function Home() {
                 Celebrating Our Journey, Shaping What Comes Next.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/register">
-                  <Button size="lg" className="w-full sm:w-auto text-base">
-                    Register Now
-                  </Button>
-                </Link>
+                {isRegistrationOpen && (
+                  <Link href="/register">
+                    <Button size="lg" className="w-full sm:w-auto text-base">
+                      Register Now
+                    </Button>
+                  </Link>
+                )}
                 <Link href="#journey">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto text-base">
+                  <Button variant={isRegistrationOpen ? "outline" : "primary"} size="lg" className="w-full sm:w-auto text-base">
                     Discover Our Story
                   </Button>
                 </Link>
@@ -108,13 +118,19 @@ export default function Home() {
           <FadeIn delay={0.1}>
             <Card className="max-w-2xl bg-background border-border">
               <CardContent className="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                <div className="w-32 h-32 rounded-full bg-border flex-shrink-0" />
+                <div className="w-32 h-32 rounded-full bg-border flex-shrink-0 overflow-hidden">
+                  {session?.speakerPhoto ? (
+                    <img src={session.speakerPhoto} alt={session.speakerName ?? 'Speaker'} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">Photo</div>
+                  )}
+                </div>
                 <div>
                   <div className="text-sm text-accent font-medium uppercase mb-2">Keynote Speaker</div>
-                  <h3 className="text-2xl font-bold mb-1">[Speaker Name]</h3>
-                  <p className="text-muted-foreground mb-4">[Job Title] at [Company]</p>
+                  <h3 className="text-2xl font-bold mb-1">{session?.speakerName || "[Speaker Name]"}</h3>
+                  <p className="text-muted-foreground mb-4">{session?.speakerRole || "[Job Title]"} at {session?.speakerCompany || "[Company]"}</p>
                   <p className="text-secondary">
-                    &quot;[Topic Title Placeholder] - A deep dive into the technological shifts shaping our industrial community.&quot;
+                    &quot;{session?.title || "[Topic Title Placeholder]"} - {session?.description || "A deep dive into the technological shifts shaping our industrial community."}&quot;
                   </p>
                 </div>
               </CardContent>
@@ -131,27 +147,39 @@ export default function Home() {
               title="Event Updates" 
             />
           </FadeIn>
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <StaggerItem key={i}>
-                <Card className="h-full hover:border-accent transition-colors cursor-pointer group">
-                  <div className="h-48 bg-border w-full rounded-t-xl group-hover:opacity-90 transition-opacity" />
-                  <CardHeader>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-medium text-accent px-2 py-1 bg-accent/10 rounded-md">Category</span>
-                      <span className="text-xs text-muted-foreground">Oct {i + 10}, 2026</span>
+          {newsItems.length > 0 ? (
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {newsItems.map((item) => (
+                <StaggerItem key={item.id}>
+                  <Card className="h-full hover:border-accent transition-colors cursor-pointer group">
+                    <div className="h-48 bg-border w-full rounded-t-xl group-hover:opacity-90 transition-opacity overflow-hidden">
+                      {item.coverImage && <img src={item.coverImage} alt={item.title} className="w-full h-full object-cover" />}
                     </div>
-                    <CardTitle className="text-lg">Update Article Title Placeholder {i}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription>
-                      A short excerpt describing the news update. This content will be dynamically loaded from the database in a future phase.
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+                    <CardHeader>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-medium text-accent px-2 py-1 bg-accent/10 rounded-md">News</span>
+                        <span className="text-xs text-muted-foreground">
+                          {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : 'Draft'}
+                        </span>
+                      </div>
+                      <CardTitle className="text-lg">{item.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription>
+                        {item.excerpt || "Click to read more about this update."}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          ) : (
+            <FadeIn delay={0.2}>
+              <div className="py-12 text-center border rounded-xl bg-surface">
+                <p className="text-muted-foreground">More updates coming soon.</p>
+              </div>
+            </FadeIn>
+          )}
           <FadeIn delay={0.3} className="mt-10 text-center">
             <Link href="/news">
               <Button variant="outline">View All Updates</Button>
@@ -189,23 +217,25 @@ export default function Home() {
       </Section>
 
       {/* 7. REGISTRATION INVITATION */}
-      <Section className="bg-accent text-accent-foreground py-24 md:py-32">
-        <Container>
-          <FadeIn>
-            <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">Be part of the next chapter.</h2>
-              <p className="text-lg md:text-xl opacity-90 mb-10">
-                Join us as we celebrate two decades of community and shape the future of our industry together.
-              </p>
-              <Link href="/register">
-                <Button size="lg" className="bg-background text-foreground hover:bg-surface text-lg px-10 h-14">
-                  Register for Gathering XXVI
-                </Button>
-              </Link>
-            </div>
-          </FadeIn>
-        </Container>
-      </Section>
+      {isRegistrationOpen && (
+        <Section className="bg-accent text-accent-foreground py-24 md:py-32">
+          <Container>
+            <FadeIn>
+              <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6">Be part of the next chapter.</h2>
+                <p className="text-lg md:text-xl opacity-90 mb-10">
+                  Join us as we celebrate two decades of community and shape the future of our industry together.
+                </p>
+                <Link href="/register">
+                  <Button size="lg" className="bg-background text-foreground hover:bg-surface text-lg px-10 h-14">
+                    Register for Gathering XXVI
+                  </Button>
+                </Link>
+              </div>
+            </FadeIn>
+          </Container>
+        </Section>
+      )}
     </div>
   );
 }
