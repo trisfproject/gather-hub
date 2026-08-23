@@ -11,10 +11,17 @@
   --color-primary-foreground: #FFFFFF;
   
   --color-secondary: #666666;
+  --color-secondary-foreground: #111111;
   
   --color-border: #E7E7E3;
-  --color-muted: #A0A09A;
+  --color-muted: #8C8C86;
   --color-muted-foreground: #666666;
+  
+  /* Semantic accent token for future customization */
+  --color-accent: #0055FF;
+  --color-accent-foreground: #FFFFFF;
+  
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
