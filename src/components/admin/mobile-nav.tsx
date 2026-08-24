@@ -13,7 +13,9 @@ import {
   MapPin,
   Newspaper,
   Mic2,
-  ShieldCheck
+  ShieldCheck,
+  Users,
+  ShoppingBag
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -43,9 +45,11 @@ export function MobileNav({ user }: MobileNavProps) {
   const navItems = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Registrations", href: "/admin/registrations", icon: Ticket },
+    { name: "Participants", href: "/admin/participants", icon: Users },
     { name: "News", href: "/admin/news", icon: Newspaper },
     { name: "Sharing Session", href: "/admin/sharing-session", icon: Mic2 },
     { name: "Pickup Points", href: "/admin/pickup-points", icon: MapPin },
+    { name: "Merchandise", href: "/admin/merchandise", icon: ShoppingBag, roles: ["SUPER_ADMIN", "ADMIN", "COMMITTEE", "CHECKIN", "VIEWER"] },
     { name: "Admins", href: "/admin/admins", icon: ShieldCheck, roles: ["SUPER_ADMIN"] },
     { name: "Settings", href: "/admin/settings", icon: Settings, roles: ["SUPER_ADMIN", "ADMIN"] },
   ];

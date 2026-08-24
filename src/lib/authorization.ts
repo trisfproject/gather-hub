@@ -5,8 +5,8 @@ import { admins } from "@/db/schema/auth";
 import { eq } from "drizzle-orm";
 
 export type Role = "SUPER_ADMIN" | "ADMIN" | "COMMITTEE" | "CHECKIN" | "VIEWER";
-export type Resource = "dashboard" | "participants" | "registrations" | "event" | "news" | "sharing_session" | "pickup_points" | "admins" | "audit_logs";
-export type Action = "read" | "create" | "update" | "delete" | "approve" | "reject" | "manage";
+export type Resource = "dashboard" | "participants" | "registrations" | "event" | "news" | "sharing_session" | "pickup_points" | "admins" | "audit_logs" | "merchandise" | "exports";
+export type Action = "read" | "create" | "update" | "delete" | "approve" | "reject" | "manage" | "export";
 
 // Define the permissions matrix
 const PERMISSIONS: Record<Role, Record<Resource, Action[]>> = {
@@ -20,17 +20,21 @@ const PERMISSIONS: Record<Role, Record<Resource, Action[]>> = {
     pickup_points: ["read", "create", "update", "delete", "manage"],
     admins: ["read", "create", "update", "delete", "manage"],
     audit_logs: ["read"],
+    merchandise: ["read", "manage"],
+    exports: ["read", "export"],
   },
   ADMIN: {
     dashboard: ["read"],
-    participants: ["read"],
-    registrations: ["read", "approve", "reject"],
+    participants: ["read", "manage"],
+    registrations: ["read", "approve", "reject", "manage"],
     event: ["read"],
     news: ["read", "create", "update", "delete", "manage"],
     sharing_session: ["read", "create", "update", "delete", "manage"],
     pickup_points: ["read", "create", "update", "delete", "manage"],
     admins: [], // cannot manage admins
     audit_logs: [],
+    merchandise: ["read", "manage"],
+    exports: ["read", "export"],
   },
   COMMITTEE: {
     dashboard: ["read"],
@@ -42,6 +46,8 @@ const PERMISSIONS: Record<Role, Record<Resource, Action[]>> = {
     pickup_points: ["read"], // cannot manage
     admins: [],
     audit_logs: [],
+    merchandise: ["read"], // read-only inventory
+    exports: ["read", "export"], // can export participants
   },
   CHECKIN: {
     dashboard: ["read"],
@@ -53,6 +59,8 @@ const PERMISSIONS: Record<Role, Record<Resource, Action[]>> = {
     pickup_points: ["read"],
     admins: [],
     audit_logs: [],
+    merchandise: ["read"],
+    exports: [],
   },
   VIEWER: {
     dashboard: ["read"],
@@ -64,6 +72,8 @@ const PERMISSIONS: Record<Role, Record<Resource, Action[]>> = {
     pickup_points: ["read"],
     admins: [],
     audit_logs: [],
+    merchandise: ["read"],
+    exports: [],
   }
 };
 
